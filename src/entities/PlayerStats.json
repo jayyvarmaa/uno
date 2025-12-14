@@ -1,0 +1,72 @@
+{
+    "name": "PlayerStats",
+    "type": "object",
+    "properties": {
+        "player_email": {
+            "type": "string"
+        },
+        "player_name": {
+            "type": "string"
+        },
+        "games_played": {
+            "type": "number",
+            "default": 0
+        },
+        "wins": {
+            "type": "number",
+            "default": 0
+        },
+        "cards_played": {
+            "type": "number",
+            "default": 0
+        },
+        "special_cards_played": {
+            "type": "number",
+            "default": 0
+        },
+        "wild_cards_played": {
+            "type": "number",
+            "default": 0
+        },
+        "skip_cards_used": {
+            "type": "number",
+            "default": 0
+        },
+        "reverse_cards_used": {
+            "type": "number",
+            "default": 0
+        },
+        "draw_cards_used": {
+            "type": "number",
+            "default": 0
+        },
+        "average_cards_left": {
+            "type": "number",
+            "default": 0
+        },
+        "total_cards_left": {
+            "type": "number",
+            "default": 0
+        },
+        "favorite_color": {
+            "type": "string"
+        },
+        "color_usage": {
+            "type": "object",
+            "description": "Track which colors are played most"
+        },
+        "early_wild_usage": {
+            "type": "number",
+            "default": 0,
+            "description": "Times wild cards were used in first half of hand"
+        },
+        "late_wild_usage": {
+            "type": "number",
+            "default": 0,
+            "description": "Times wild cards were used in second half of hand"
+        }
+    },
+    "required": [
+        "player_email"
+    ]
+}

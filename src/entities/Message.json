@@ -1,0 +1,28 @@
+{
+    "name": "Message",
+    "type": "object",
+    "properties": {
+        "game_id": {
+            "type": "string",
+            "description": "ID of the game this message belongs to"
+        },
+        "sender_email": {
+            "type": "string"
+        },
+        "sender_name": {
+            "type": "string"
+        },
+        "message": {
+            "type": "string"
+        },
+        "timestamp": {
+            "type": "string",
+            "format": "date-time"
+        }
+    },
+    "required": [
+        "game_id",
+        "sender_email",
+        "message"
+    ]
+}

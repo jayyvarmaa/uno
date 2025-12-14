@@ -1,0 +1,107 @@
+{
+    "name": "Game",
+    "type": "object",
+    "properties": {
+        "room_code": {
+            "type": "string",
+            "description": "Unique room code for joining"
+        },
+        "status": {
+            "type": "string",
+            "enum": [
+                "waiting",
+                "playing",
+                "finished"
+            ],
+            "default": "waiting"
+        },
+        "players": {
+            "type": "array",
+            "description": "List of player emails in the game",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "cards": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "card_count": {
+                        "type": "number"
+                    }
+                }
+            }
+        },
+        "current_player_index": {
+            "type": "number",
+            "default": 0
+        },
+        "direction": {
+            "type": "number",
+            "default": 1,
+            "description": "1 for clockwise, -1 for counter-clockwise"
+        },
+        "deck": {
+            "type": "array",
+            "description": "Remaining cards in draw pile",
+            "items": {
+                "type": "object"
+            }
+        },
+        "discard_pile": {
+            "type": "array",
+            "items": {
+                "type": "object"
+            }
+        },
+        "current_color": {
+            "type": "string",
+            "enum": [
+                "red",
+                "blue",
+                "green",
+                "yellow"
+            ]
+        },
+        "winner": {
+            "type": "string",
+            "description": "Email of winner"
+        },
+        "is_public": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this room is visible in public room browser"
+        },
+        "room_type": {
+            "type": "string",
+            "enum": [
+                "public",
+                "private"
+            ],
+            "default": "private",
+            "description": "Type of room - public rooms are joinable by anyone"
+        },
+        "host_name": {
+            "type": "string",
+            "description": "Display name of the room host"
+        },
+        "max_players": {
+            "type": "number",
+            "default": 10
+        },
+        "min_players": {
+            "type": "number",
+            "default": 3
+        }
+    },
+    "required": [
+        "room_code"
+    ]
+}

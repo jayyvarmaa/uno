@@ -1,0 +1,50 @@
+{
+    "name": "GameHistory",
+    "type": "object",
+    "properties": {
+        "game_id": {
+            "type": "string"
+        },
+        "room_code": {
+            "type": "string"
+        },
+        "players": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "final_card_count": {
+                        "type": "number"
+                    },
+                    "cards_played": {
+                        "type": "number"
+                    },
+                    "special_cards_used": {
+                        "type": "number"
+                    }
+                }
+            }
+        },
+        "winner_email": {
+            "type": "string"
+        },
+        "winner_name": {
+            "type": "string"
+        },
+        "total_rounds": {
+            "type": "number"
+        },
+        "game_duration_seconds": {
+            "type": "number"
+        }
+    },
+    "required": [
+        "game_id"
+    ]
+}
