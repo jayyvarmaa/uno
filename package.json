@@ -10,7 +10,8 @@
         "preview": "vite preview",
         "server": "node server/index.js",
         "start": "node server/index.js",
-        "dev:full": "concurrently \"npm run server\" \"npm run dev\""
+        "dev:full": "concurrently \"npm run server\" \"npm run dev\"",
+        "test": "bun test"
     },
     "dependencies": {
         "@radix-ui/react-label": "^2.0.2",
