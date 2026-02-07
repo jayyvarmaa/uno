@@ -61,22 +61,40 @@ export default function WaitingRoom({ gameId, currentUser, onGameStart, onLeave 
 
     const addAIPlayerMutation = useMutation({
         mutationFn: async () => {
-            const aiNumber = currentPlayers.length;
+            // Get fresh game state to access the current deck
+            const freshGame = await base44.entities.Game.get(gameId);
+
+            // Create a copy of the deck and draw 7 cards
+            const currentDeck = [...freshGame.deck];
+            // Ensure we have enough cards
+            if (currentDeck.length < 7) {
+                throw new Error('Not enough cards in deck');
+            }
+
+            const aiCards = currentDeck.splice(0, 7);
+            const aiNumber = freshGame.players.length;
+
             const aiPlayer = {
                 email: `ai-${Date.now()}@bot.uno`,
                 name: `AI Player ${aiNumber}`,
-                cards: [],
-                card_count: 7
+                cards: aiCards,
+                card_count: 7,
+                isAI: true
             };
-            const updatedPlayers = [...currentPlayers, aiPlayer];
-            await base44.entities.Game.update(gameId, { players: updatedPlayers });
+
+            const updatedPlayers = [...freshGame.players, aiPlayer];
+
+            await base44.entities.Game.update(gameId, {
+                players: updatedPlayers,
+                deck: currentDeck
+            });
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['game', gameId]);
             toast.success('AI player added!');
         },
-        onError: () => {
-            toast.error('Failed to add AI player');
+        onError: (error) => {
+            toast.error(error.message || 'Failed to add AI player');
         }
     });
 
