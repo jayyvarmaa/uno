@@ -4,6 +4,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import { generateDeck, getCardScore } from '../src/lib/cardUtils.js';
 
 // Load env vars
 dotenv.config();
@@ -78,65 +79,7 @@ app.get('/api/auth/me', (req, res) => {
   res.json({ id: 'demo_user', email: 'demo@user.com', name: 'Demo User', full_name: 'Demo User' });
 });
 
-// Card scoring function
-const getCardScore = (card) => {
-  if (card.type === 'number') return parseInt(card.value, 10);
-  if (card.type === 'special') return 20; // skip, reverse, draw2
-  if (card.type === 'wild') return 50; // wild, wild_draw4
-  return 0;
-};
-
 // Game routes (demo)
-const generateDeck = () => {
-  const colors = ['red', 'blue', 'green', 'yellow'];
-  const deck = [];
-  let cardId = 0;
-
-  // Number cards: one 0, two of 1-9 per color
-  colors.forEach(color => {
-    // One zero
-    deck.push({
-      id: `card-${cardId++}`,
-      color,
-      type: 'number',
-      value: '0',
-      score: 0
-    });
-
-    // Two of each 1-9
-    for (let i = 1; i <= 9; i++) {
-      deck.push({ id: `card-${cardId++}`, color, type: 'number', value: String(i), score: i });
-      deck.push({ id: `card-${cardId++}`, color, type: 'number', value: String(i), score: i });
-    }
-  });
-
-  // Special cards: two of each per color
-  colors.forEach(color => {
-    // Skip
-    deck.push({ id: `card-${cardId++}`, color, type: 'special', value: 'skip', score: 20 });
-    deck.push({ id: `card-${cardId++}`, color, type: 'special', value: 'skip', score: 20 });
-    // Reverse
-    deck.push({ id: `card-${cardId++}`, color, type: 'special', value: 'reverse', score: 20 });
-    deck.push({ id: `card-${cardId++}`, color, type: 'special', value: 'reverse', score: 20 });
-    // Draw 2
-    deck.push({ id: `card-${cardId++}`, color, type: 'special', value: 'draw2', score: 20 });
-    deck.push({ id: `card-${cardId++}`, color, type: 'special', value: 'draw2', score: 20 });
-  });
-
-  // Wild cards: 4 of each
-  for (let i = 0; i < 4; i++) {
-    deck.push({ id: `card-${cardId++}`, color: 'wild', type: 'wild', value: 'wild', score: 50 });
-    deck.push({ id: `card-${cardId++}`, color: 'wild', type: 'wild', value: 'wild_draw4', score: 50 });
-  }
-
-  // Fisher-Yates shuffle
-  for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [deck[i], deck[j]] = [deck[j], deck[i]];
-  }
-
-  return deck;
-};
 
 const generateRoomCode = () => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
