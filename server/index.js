@@ -10,9 +10,10 @@ dotenv.config();
 
 // MongoDB Connection
 const connectDB = async () => {
+  console.log('Connecting to MongoDB...');
   try {
     const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/base44_uno';
-    const conn = await mongoose.connect(mongoUri);
+    const conn = await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 2000 });
     console.log(`MongoDB Connected: ${conn.connection.host}`);
     return true;
   } catch (error) {
@@ -57,6 +58,7 @@ io.on('connection', (socket) => {
 // In-memory storage for demo mode
 const demoGames = new Map();
 const demoStats = new Map();
+const roomCodeMap = new Map();
 
 // Demo Routes (work without MongoDB)
 app.get('/api/health', (req, res) => {
@@ -178,7 +180,7 @@ app.post('/api/games', (req, res) => {
   };
 
   demoGames.set(game._id, game);
-  demoGames.set(roomCode, game);
+  roomCodeMap.set(roomCode, game._id);
 
   res.status(201).json(game);
 });
@@ -186,9 +188,8 @@ app.post('/api/games', (req, res) => {
 // Get all public waiting games
 app.get('/api/games/public', (req, res) => {
   const publicGames = [];
-  demoGames.forEach((game, key) => {
-    // Only add games by their _id key (avoid duplicates from roomCode keys)
-    if (key.startsWith('game_') && game.is_public && game.status === 'waiting') {
+  demoGames.forEach((game) => {
+    if (game.is_public && game.status === 'waiting') {
       // Return safe version without full card data
       publicGames.push({
         _id: game._id,
@@ -210,7 +211,8 @@ app.get('/api/games', (req, res) => {
   const { room_code, id } = req.query;
 
   if (room_code) {
-    const game = demoGames.get(room_code.toUpperCase());
+    const gameId = roomCodeMap.get(room_code.toUpperCase());
+    const game = gameId ? demoGames.get(gameId) : null;
     return res.json(game ? [game] : []);
   }
 
