@@ -235,6 +235,8 @@ app.put('/api/games/:id', (req, res) => {
   Object.assign(game, req.body);
   demoGames.set(req.params.id, game);
 
+  io.to(game._id).emit('game_updated', game);
+
   res.json(game);
 });
 
@@ -254,6 +256,8 @@ app.post('/api/games/:id/join', (req, res) => {
     cards: newCards,
     card_count: 7
   });
+
+  io.to(game._id).emit('game_updated', game);
 
   res.json(game);
 });

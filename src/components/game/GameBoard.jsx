@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { io } from 'socket.io-client';
 import { base44 } from '@/api/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Settings, Loader2, RotateCw, RotateCcw } from 'lucide-react';
@@ -26,9 +27,25 @@ export default function GameBoard({ gameId, currentUser, onLeave }) {
         queryFn: async () => {
             const games = await base44.entities.Game.filter({ id: gameId });
             return games[0];
-        },
-        refetchInterval: 1000
+        }
     });
+
+    useEffect(() => {
+        const socketUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '');
+        const socket = io(socketUrl);
+
+        socket.on('connect', () => {
+            socket.emit('join_game', gameId);
+        });
+
+        socket.on('game_updated', (updatedGame) => {
+            queryClient.setQueryData(['game', gameId], updatedGame);
+        });
+
+        return () => {
+            socket.disconnect();
+        };
+    }, [gameId, queryClient]);
 
     const currentPlayerIndex = game?.players?.findIndex(p => p.email === currentUser?.email) ?? -1;
     const currentPlayer = game?.players?.[currentPlayerIndex];
@@ -80,7 +97,7 @@ export default function GameBoard({ gameId, currentUser, onLeave }) {
         mutationFn: async ({ card, chosenColor, playerIndex = currentPlayerIndex }) => {
             const targetPlayer = game.players[playerIndex];
             const newPlayerCards = targetPlayer.cards.filter(c => c.id !== card.id);
-            const newDiscardPile = [...game.discard_pile, card];
+            let newDiscardPile = [...game.discard_pile, card];
 
             let nextColor = card.color === 'wild' ? chosenColor : card.color;
             let nextPlayerIndex = game.current_player_index;
