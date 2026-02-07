@@ -56,6 +56,7 @@ io.on('connection', (socket) => {
 
 // In-memory storage for demo mode
 const demoGames = new Map();
+const publicWaitingGames = new Set();
 const demoStats = new Map();
 
 // Demo Routes (work without MongoDB)
@@ -180,26 +181,33 @@ app.post('/api/games', (req, res) => {
   demoGames.set(game._id, game);
   demoGames.set(roomCode, game);
 
+  if (game.is_public && game.status === 'waiting') {
+    publicWaitingGames.add(game);
+  }
+
   res.status(201).json(game);
 });
 
 // Get all public waiting games
 app.get('/api/games/public', (req, res) => {
   const publicGames = [];
-  demoGames.forEach((game, key) => {
-    // Only add games by their _id key (avoid duplicates from roomCode keys)
-    if (key.startsWith('game_') && game.is_public && game.status === 'waiting') {
-      // Return safe version without full card data
-      publicGames.push({
-        _id: game._id,
-        room_code: game.room_code,
-        host_name: game.host_name,
-        player_count: game.players?.length || 0,
-        max_players: game.max_players,
-        status: game.status,
-        created_at: game.created_at
-      });
+  publicWaitingGames.forEach((game) => {
+    // Defensive check: ensure game is still valid for this list
+    if (game.status !== 'waiting' || !game.is_public) {
+      publicWaitingGames.delete(game);
+      return;
     }
+
+    // Return safe version without full card data
+    publicGames.push({
+      _id: game._id,
+      room_code: game.room_code,
+      host_name: game.host_name,
+      player_count: game.players?.length || 0,
+      max_players: game.max_players,
+      status: game.status,
+      created_at: game.created_at
+    });
   });
   // Sort by creation time, newest first
   publicGames.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -234,6 +242,12 @@ app.put('/api/games/:id', (req, res) => {
 
   Object.assign(game, req.body);
   demoGames.set(req.params.id, game);
+
+  if (game.is_public && game.status === 'waiting') {
+    publicWaitingGames.add(game);
+  } else {
+    publicWaitingGames.delete(game);
+  }
 
   res.json(game);
 });
