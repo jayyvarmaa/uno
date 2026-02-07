@@ -80,7 +80,7 @@ export default function GameBoard({ gameId, currentUser, onLeave }) {
         mutationFn: async ({ card, chosenColor, playerIndex = currentPlayerIndex }) => {
             const targetPlayer = game.players[playerIndex];
             const newPlayerCards = targetPlayer.cards.filter(c => c.id !== card.id);
-            const newDiscardPile = [...game.discard_pile, card];
+            let newDiscardPile = [...game.discard_pile, card];
 
             let nextColor = card.color === 'wild' ? chosenColor : card.color;
             let nextPlayerIndex = game.current_player_index;
