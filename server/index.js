@@ -87,7 +87,7 @@ const getCardScore = (card) => {
 };
 
 // Game routes (demo)
-const generateDeck = () => {
+const createBaseDeck = () => {
   const colors = ['red', 'blue', 'green', 'yellow'];
   const deck = [];
   let cardId = 0;
@@ -128,6 +128,15 @@ const generateDeck = () => {
     deck.push({ id: `card-${cardId++}`, color: 'wild', type: 'wild', value: 'wild', score: 50 });
     deck.push({ id: `card-${cardId++}`, color: 'wild', type: 'wild', value: 'wild_draw4', score: 50 });
   }
+
+  return deck;
+};
+
+const BASE_DECK = createBaseDeck();
+
+const generateDeck = () => {
+  // Create a shallow copy of the base deck and its card objects
+  const deck = BASE_DECK.map(card => ({ ...card }));
 
   // Fisher-Yates shuffle
   for (let i = deck.length - 1; i > 0; i--) {
