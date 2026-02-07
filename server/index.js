@@ -197,12 +197,17 @@ app.get('/api/games/public', (req, res) => {
         player_count: game.players?.length || 0,
         max_players: game.max_players,
         status: game.status,
-        created_at: game.created_at
+        created_at: game.created_at,
+        _ts: new Date(game.created_at).getTime()
       });
     }
   });
   // Sort by creation time, newest first
-  publicGames.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  publicGames.sort((a, b) => b._ts - a._ts);
+
+  // Remove temporary timestamp property
+  publicGames.forEach(game => delete game._ts);
+
   res.json(publicGames);
 });
 
