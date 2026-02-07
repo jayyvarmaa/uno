@@ -25,15 +25,19 @@ const connectDB = async () => {
 const app = express();
 const server = http.createServer(app);
 
+// CORS Configuration
+const corsOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map(origin => origin.trim())
+  : ["http://localhost:5173", "http://localhost:3000"];
+
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: corsOrigins,
+  credentials: true
+}));
 app.use(express.json());
 
 // Socket.io Setup
-const corsOrigins = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split(',')
-  : ["http://localhost:5173", "http://localhost:3000"];
-
 const io = new Server(server, {
   cors: {
     origin: corsOrigins,
