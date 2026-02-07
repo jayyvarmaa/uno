@@ -9,7 +9,7 @@ import GameBoard from '@/components/game/GameBoard';
 import { Button } from '@/components/ui/button';
 import { Trophy, Gamepad2, LogOut, User } from 'lucide-react';
 import { Toaster } from 'sonner';
-import TargetCursor from '@/components/effects/TargetCursor';
+
 
 export default function Home() {
   const navigate = useNavigate();
@@ -63,7 +63,7 @@ export default function Home() {
   if (gameStatus === 'playing' && currentGameId) {
     return (
       <>
-        <TargetCursor spinDuration={2} hideDefaultCursor={true} parallaxOn={true} />
+
         <GameBoard
           gameId={currentGameId}
           currentUser={currentUser}
@@ -77,7 +77,7 @@ export default function Home() {
   if (gameStatus === 'waiting' && currentGameId) {
     return (
       <div className="min-h-screen bg-canvas relative overflow-hidden">
-        <TargetCursor spinDuration={2} hideDefaultCursor={true} parallaxOn={true} />
+
         <div className="noise-overlay" />
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/20 rounded-full blur-[100px] animate-pulse" />
@@ -96,7 +96,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-canvas relative overflow-hidden selection:bg-primary/30">
-      <TargetCursor spinDuration={2} hideDefaultCursor={true} parallaxOn={true} />
+
       <div className="noise-overlay" />
       <Toaster position="top-center" />
 

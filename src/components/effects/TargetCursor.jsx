@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { gsap } from 'gsap';
+import './TargetCursor.css';
 
 const TargetCursor = ({
     targetSelector = '.cursor-target',
@@ -17,6 +18,10 @@ const TargetCursor = ({
     const targetCornerPositionsRef = useRef(null);
     const tickerFnRef = useRef(null);
     const activeStrengthRef = useRef(0);
+    const activeTargetRef = useRef(null);
+    const isDraggingRef = useRef(false);
+    const hoverTargetRef = useRef(null);
+    const cleanupHoverRef = useRef(null);
 
     const isMobile = useMemo(() => {
         const hasTouchScreen = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -48,9 +53,9 @@ const TargetCursor = ({
     useEffect(() => {
         if (isMobile || !cursorRef.current) return;
 
-        const originalCursor = document.body.style.cursor;
+        // Add class to body that hides cursor on ALL elements (including children)
         if (hideDefaultCursor) {
-            document.body.style.cursor = 'none';
+            document.body.classList.add('hide-cursor');
         }
 
         const cursor = cursorRef.current;
@@ -86,9 +91,39 @@ const TargetCursor = ({
         createSpinTimeline();
 
         const tickerFn = () => {
-            if (!targetCornerPositionsRef.current || !cursorRef.current || !cornersRef.current) {
+            if (!cursorRef.current || !cornersRef.current) {
                 return;
             }
+
+            // Safety check: if target was removed from DOM, force cleanup
+            if (isActiveRef.current && hoverTargetRef.current && !hoverTargetRef.current.isConnected) {
+                if (cleanupHoverRef.current) {
+                    cleanupHoverRef.current();
+                }
+                return;
+            }
+
+            // During drag, recalculate target positions from element
+            if (isDraggingRef.current && activeTargetRef.current) {
+                // Check if element is still in DOM - reset if not
+                if (!document.body.contains(activeTargetRef.current)) {
+                    isDraggingRef.current = false;
+                    activeTargetRef.current = null;
+                    targetCornerPositionsRef.current = null;
+                    return;
+                }
+                const rect = activeTargetRef.current.getBoundingClientRect();
+                const { borderWidth, cornerSize } = constants;
+                targetCornerPositionsRef.current = [
+                    { x: rect.left - borderWidth, y: rect.top - borderWidth },
+                    { x: rect.right + borderWidth - cornerSize, y: rect.top - borderWidth },
+                    { x: rect.right + borderWidth - cornerSize, y: rect.bottom + borderWidth - cornerSize },
+                    { x: rect.left - borderWidth, y: rect.bottom + borderWidth - cornerSize }
+                ];
+            }
+
+            if (!targetCornerPositionsRef.current) return;
+
             const strength = activeStrengthRef.current;
             if (strength === 0) return;
             const cursorX = gsap.getProperty(cursorRef.current, 'x');
@@ -133,22 +168,34 @@ const TargetCursor = ({
         };
         window.addEventListener('scroll', scrollHandler, { passive: true });
 
-        const mouseDownHandler = () => {
+        const mouseDownHandler = (e) => {
             if (!dotRef.current) return;
             gsap.to(dotRef.current, { scale: 0.7, duration: 0.3 });
             gsap.to(cursorRef.current, { scale: 0.9, duration: 0.2 });
+
+            // Lock to current target during drag and store element ref
+            if (activeTarget) {
+                isDraggingRef.current = true;
+                activeTargetRef.current = activeTarget;
+            }
         };
 
         const mouseUpHandler = () => {
             if (!dotRef.current) return;
             gsap.to(dotRef.current, { scale: 1, duration: 0.3 });
             gsap.to(cursorRef.current, { scale: 1, duration: 0.2 });
+
+            // Release drag lock
+            isDraggingRef.current = false;
         };
 
         window.addEventListener('mousedown', mouseDownHandler);
         window.addEventListener('mouseup', mouseUpHandler);
 
         const enterHandler = e => {
+            // Don't switch targets while dragging
+            if (isDraggingRef.current) return;
+
             const directTarget = e.target;
             const allTargets = [];
             let current = directTarget;
@@ -189,6 +236,7 @@ const TargetCursor = ({
             ];
 
             isActiveRef.current = true;
+            hoverTargetRef.current = target;
             gsap.ticker.add(tickerFnRef.current);
 
             gsap.to(activeStrengthRef, { current: 1, duration: hoverDuration, ease: 'power2.out' });
@@ -205,6 +253,8 @@ const TargetCursor = ({
             const leaveHandler = () => {
                 gsap.ticker.remove(tickerFnRef.current);
                 isActiveRef.current = false;
+                hoverTargetRef.current = null;
+                cleanupHoverRef.current = null;
                 targetCornerPositionsRef.current = null;
                 gsap.set(activeStrengthRef, { current: 0, overwrite: true });
                 activeTarget = null;
@@ -245,6 +295,7 @@ const TargetCursor = ({
                 cleanupTarget(target);
             };
             currentLeaveHandler = leaveHandler;
+            cleanupHoverRef.current = leaveHandler;
             target.addEventListener('mouseleave', leaveHandler);
         };
 
@@ -263,7 +314,7 @@ const TargetCursor = ({
                 cleanupTarget(activeTarget);
             }
             spinTl.current?.kill();
-            document.body.style.cursor = originalCursor;
+            document.body.classList.remove('hide-cursor');
             isActiveRef.current = false;
             targetCornerPositionsRef.current = null;
             activeStrengthRef.current = 0;

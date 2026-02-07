@@ -14,6 +14,7 @@ export default function PlayerHand({
     };
 
     // Calculate fan spread for cards - wider spread for better visibility
+    // Calculate fan spread for cards - wider spread for better visibility
     const getCardTransform = (index, total) => {
         if (total <= 1) return { rotation: 0, translateY: 0 };
 
@@ -22,16 +23,19 @@ export default function PlayerHand({
         const spreadAngle = maxSpread / (total - 1);
         const rotation = -maxSpread / 2 + (index * spreadAngle);
 
-        // Slight arc curve
+        // Parabolic arc for smoother curve
+        // Center of hand is index (total-1)/2
+        // x goes from -0.5 to 0.5
         const normalizedPos = (index / (total - 1)) - 0.5;
-        const translateY = Math.abs(normalizedPos) * 15;
+        // y = x^2 * factor. At edges (0.5), y = 0.25 * 40 = 10px down. Center is 0.
+        const translateY = Math.pow(normalizedPos, 2) * 40;
 
         return { rotation, translateY };
     };
 
     return (
         <div className="relative">
-            <div className="flex justify-center items-end">
+            <div className="flex justify-center items-end" style={{ height: '140px' }}>
                 <AnimatePresence mode="popLayout">
                     {cards.map((card, index) => {
                         const { rotation, translateY } = getCardTransform(index, cards.length);
@@ -43,19 +47,24 @@ export default function PlayerHand({
                                 initial={{ opacity: 0, y: 80, rotateZ: -15 }}
                                 animate={{
                                     opacity: 1,
-                                    y: playable ? translateY - 10 : translateY,
+                                    y: playable ? translateY - 30 : translateY, // Lift PLAYABLE cards significantly
                                     rotateZ: rotation,
                                     zIndex: playable ? 100 + index : index
                                 }}
+                                whileHover={{
+                                    zIndex: 200,
+                                    scale: 1.1,
+                                    y: playable ? translateY - 40 : translateY, // Only lift if playable
+                                    transition: { duration: 0.2 }
+                                }}
                                 exit={{ opacity: 0, y: 80, scale: 0.8 }}
                                 transition={{
-                                    delay: index * 0.03,
                                     type: 'spring',
                                     stiffness: 300,
                                     damping: 25
                                 }}
                                 style={{
-                                    marginLeft: index === 0 ? 0 : '-1.5rem',
+                                    marginLeft: index === 0 ? 0 : '-1.5rem', // Slightly tighter overlap for fan effect
                                     transformOrigin: 'bottom center'
                                 }}
                                 className="relative"

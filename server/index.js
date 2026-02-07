@@ -30,9 +30,13 @@ app.use(cors());
 app.use(express.json());
 
 // Socket.io Setup
+const corsOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',')
+  : ["http://localhost:5173", "http://localhost:3000"];
+
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173", "http://localhost:3000"],
+    origin: corsOrigins,
     methods: ["GET", "POST"]
   }
 });
@@ -74,36 +78,64 @@ app.get('/api/auth/me', (req, res) => {
   res.json({ id: 'demo_user', email: 'demo@user.com', name: 'Demo User', full_name: 'Demo User' });
 });
 
+// Card scoring function
+const getCardScore = (card) => {
+  if (card.type === 'number') return parseInt(card.value, 10);
+  if (card.type === 'special') return 20; // skip, reverse, draw2
+  if (card.type === 'wild') return 50; // wild, wild_draw4
+  return 0;
+};
+
 // Game routes (demo)
 const generateDeck = () => {
   const colors = ['red', 'blue', 'green', 'yellow'];
   const deck = [];
+  let cardId = 0;
 
+  // Number cards: one 0, two of 1-9 per color
   colors.forEach(color => {
-    deck.push({ color, type: 'number', value: 0, id: `${color}-0` });
+    // One zero
+    deck.push({
+      id: `card-${cardId++}`,
+      color,
+      type: 'number',
+      value: '0',
+      score: 0
+    });
+
+    // Two of each 1-9
     for (let i = 1; i <= 9; i++) {
-      deck.push({ color, type: 'number', value: i, id: `${color}-${i}-1` });
-      deck.push({ color, type: 'number', value: i, id: `${color}-${i}-2` });
+      deck.push({ id: `card-${cardId++}`, color, type: 'number', value: String(i), score: i });
+      deck.push({ id: `card-${cardId++}`, color, type: 'number', value: String(i), score: i });
     }
   });
 
+  // Special cards: two of each per color
   colors.forEach(color => {
-    deck.push({ color, type: 'skip', value: 'S', id: `${color}-skip-1` });
-    deck.push({ color, type: 'skip', value: 'S', id: `${color}-skip-2` });
-    deck.push({ color, type: 'reverse', value: 'R', id: `${color}-reverse-1` });
-    deck.push({ color, type: 'reverse', value: 'R', id: `${color}-reverse-2` });
-    deck.push({ color, type: 'draw2', value: '+2', id: `${color}-draw2-1` });
-    deck.push({ color, type: 'draw2', value: '+2', id: `${color}-draw2-2` });
+    // Skip
+    deck.push({ id: `card-${cardId++}`, color, type: 'special', value: 'skip', score: 20 });
+    deck.push({ id: `card-${cardId++}`, color, type: 'special', value: 'skip', score: 20 });
+    // Reverse
+    deck.push({ id: `card-${cardId++}`, color, type: 'special', value: 'reverse', score: 20 });
+    deck.push({ id: `card-${cardId++}`, color, type: 'special', value: 'reverse', score: 20 });
+    // Draw 2
+    deck.push({ id: `card-${cardId++}`, color, type: 'special', value: 'draw2', score: 20 });
+    deck.push({ id: `card-${cardId++}`, color, type: 'special', value: 'draw2', score: 20 });
   });
 
-  for (let i = 1; i <= 4; i++) {
-    deck.push({ color: 'wild', type: 'wild', value: 'W', id: `wild-${i}` });
-  }
-  for (let i = 1; i <= 4; i++) {
-    deck.push({ color: 'wild', type: 'wild_draw4', value: '+4', id: `wild4-${i}` });
+  // Wild cards: 4 of each
+  for (let i = 0; i < 4; i++) {
+    deck.push({ id: `card-${cardId++}`, color: 'wild', type: 'wild', value: 'wild', score: 50 });
+    deck.push({ id: `card-${cardId++}`, color: 'wild', type: 'wild', value: 'wild_draw4', score: 50 });
   }
 
-  return deck.sort(() => Math.random() - 0.5);
+  // Fisher-Yates shuffle
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+
+  return deck;
 };
 
 const generateRoomCode = () => {

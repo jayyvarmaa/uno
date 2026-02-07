@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-// Create axios instance with base URL
+// Create axios instance with base URL from environment
 const api = axios.create({
-    baseURL: 'http://localhost:5000/api',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
     headers: {
         'Content-Type': 'application/json',
     },
@@ -22,7 +22,8 @@ const getCurrentUser = () => {
     try {
         const user = localStorage.getItem('user');
         return user ? JSON.parse(user) : null;
-    } catch {
+    } catch (error) {
+        console.error('Error parsing user from localStorage:', error);
         return null;
     }
 };

@@ -1,55 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { getCardSvgPath, getCardDisplayColor } from '@/lib/cardUtils';
 
-// Import card back image
-const cardBackImage = '/Cards/UNO Cards (Community)/uno-back 1.png';
-
-// Map card data to image filename
-const getCardImagePath = (card) => {
-    const basePath = '/Cards/UNO Cards (Community)/';
-
-    if (!card || !card.color) return cardBackImage;
-
-    const color = card.color.charAt(0).toUpperCase() + card.color.slice(1);
-
-    // Wild cards
-    if (card.type === 'wild') {
-        return `${basePath}Wild-1.png`;
-    }
-
-    // Wild Draw 4
-    if (card.type === 'wild_draw4') {
-        return `${basePath}Draw4- 1.png`;
-    }
-
-    // Skip cards
-    if (card.type === 'skip') {
-        return `${basePath}${color} Skip- 1.png`;
-    }
-
-    // Reverse cards
-    if (card.type === 'reverse') {
-        return `${basePath}${color} Reverse- 1.png`;
-    }
-
-    // Draw Two cards
-    if (card.type === 'draw2') {
-        return `${basePath}${color} Draw2- 1.png`;
-    }
-
-    // Number cards - Blue is missing 2,3 so use 12,13 as substitutes
-    if (card.type === 'number') {
-        let value = card.value;
-        if (card.color === 'blue') {
-            if (value === 2) value = 12;
-            if (value === 3) value = 13;
-        }
-        return `${basePath}${color}- ${value}.png`;
-    }
-
-    return cardBackImage;
-};
+// Card back image path
+const cardBackImage = '/Cards/back.jpeg';
 
 export default function Card({
     card,
@@ -60,7 +15,7 @@ export default function Card({
     size = 'normal',
     faceDown = false
 }) {
-    // LARGER card sizes to match Figma design
+    // Card sizes
     const sizeConfig = {
         small: {
             container: 'w-16 h-24',
@@ -82,6 +37,7 @@ export default function Card({
 
     const config = sizeConfig[size];
 
+    // Face down card (back)
     if (faceDown) {
         return (
             <motion.div
@@ -101,8 +57,10 @@ export default function Card({
         );
     }
 
-    const imagePath = getCardImagePath(card);
+    // Get SVG path using cardUtils
+    const imagePath = getCardSvgPath(card);
     const canClick = !disabled && isPlayable;
+    const cardColor = getCardDisplayColor(card?.color);
 
     return (
         <motion.button
@@ -110,41 +68,49 @@ export default function Card({
             disabled={!canClick}
             className={cn(
                 config.container,
-                "relative rounded-xl shadow-xl transition-all duration-200 overflow-hidden",
-                // NO opacity or grayscale - keep all cards fully visible
+                "relative rounded-xl shadow-xl transition-all duration-200 overflow-hidden bg-transparent",
                 canClick ? "cursor-pointer hover:shadow-2xl" : "cursor-default",
-                isSelected && "ring-4 ring-yellow-400 ring-offset-2 ring-offset-transparent scale-105"
+                isSelected && "ring-4 ring-accent ring-offset-2 ring-offset-transparent scale-105"
             )}
-            whileHover={canClick ? {
-                y: -20,
-                scale: 1.1,
-                zIndex: 50,
-                transition: { type: 'spring', stiffness: 400 }
-            } : {}}
+            whileHover={{}}
             whileTap={canClick ? { scale: 0.95 } : {}}
             layout
         >
+            {/* SVG Card Image */}
             <img
                 src={imagePath}
-                alt={`${card?.color || 'unknown'} ${card?.type || 'card'} ${card?.value || ''}`}
-                className={cn(config.imgClass, "object-cover rounded-xl")}
+                alt={`${card?.color || 'wild'} ${card?.type || 'card'} ${card?.value || ''}`}
+                className={cn(config.imgClass, "object-contain rounded-xl scale-[1.02]")}
                 draggable={false}
                 onError={(e) => {
-                    // Fallback to card back if image fails to load
+                    // Fallback to card back if SVG fails to load
                     e.target.src = cardBackImage;
                 }}
             />
 
-            {/* Subtle highlight for playable cards - white glow border */}
+            {/* Glow effect for playable cards */}
             {isPlayable && !disabled && (
                 <motion.div
                     className="absolute inset-0 rounded-xl pointer-events-none"
-                    initial={{ boxShadow: '0 0 0 2px rgba(255,255,255,0.3)' }}
+                    style={{
+                        boxShadow: `0 0 8px 2px ${cardColor}40`
+                    }}
                     animate={{
-                        boxShadow: ['0 0 0 2px rgba(255,255,255,0.3)', '0 0 0 3px rgba(255,255,255,0.5)', '0 0 0 2px rgba(255,255,255,0.3)']
+                        boxShadow: [
+                            `0 0 8px 2px ${cardColor}40`,
+                            `0 0 12px 4px ${cardColor}60`,
+                            `0 0 8px 2px ${cardColor}40`
+                        ]
                     }}
                     transition={{ repeat: Infinity, duration: 1.5 }}
                 />
+            )}
+
+            {/* Optional: Score badge for number cards */}
+            {card?.score !== undefined && card.type === 'number' && (
+                <div className="absolute top-1 right-1 bg-canvas/80 text-text text-xs font-bold px-1.5 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                    {card.score}pt
+                </div>
             )}
         </motion.button>
     );

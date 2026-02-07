@@ -3,36 +3,45 @@ const Game = require('../models/Game');
 
 const router = express.Router();
 
-// Helper: Generate deck
+// Helper: Generate deck - matches frontend cardUtils expected structure
 const generateDeck = () => {
     const colors = ['red', 'blue', 'green', 'yellow'];
     const deck = [];
+    let cardId = 0;
 
     colors.forEach(color => {
-        deck.push({ color, type: 'number', value: 0, id: `${color}-0` });
+        // Number 0 - one per color
+        deck.push({ id: `card-${cardId++}`, color, type: 'number', value: '0' });
+        // Numbers 1-9 - two per color
         for (let i = 1; i <= 9; i++) {
-            deck.push({ color, type: 'number', value: i, id: `${color}-${i}-1` });
-            deck.push({ color, type: 'number', value: i, id: `${color}-${i}-2` });
+            deck.push({ id: `card-${cardId++}`, color, type: 'number', value: String(i) });
+            deck.push({ id: `card-${cardId++}`, color, type: 'number', value: String(i) });
         }
     });
 
+    // Special cards: skip, reverse, draw2 - two per color
     colors.forEach(color => {
-        deck.push({ color, type: 'skip', value: 'S', id: `${color}-skip-1` });
-        deck.push({ color, type: 'skip', value: 'S', id: `${color}-skip-2` });
-        deck.push({ color, type: 'reverse', value: 'R', id: `${color}-reverse-1` });
-        deck.push({ color, type: 'reverse', value: 'R', id: `${color}-reverse-2` });
-        deck.push({ color, type: 'draw2', value: '+2', id: `${color}-draw2-1` });
-        deck.push({ color, type: 'draw2', value: '+2', id: `${color}-draw2-2` });
+        deck.push({ id: `card-${cardId++}`, color, type: 'special', value: 'skip' });
+        deck.push({ id: `card-${cardId++}`, color, type: 'special', value: 'skip' });
+        deck.push({ id: `card-${cardId++}`, color, type: 'special', value: 'reverse' });
+        deck.push({ id: `card-${cardId++}`, color, type: 'special', value: 'reverse' });
+        deck.push({ id: `card-${cardId++}`, color, type: 'special', value: 'draw2' });
+        deck.push({ id: `card-${cardId++}`, color, type: 'special', value: 'draw2' });
     });
 
-    for (let i = 1; i <= 4; i++) {
-        deck.push({ color: 'wild', type: 'wild', value: 'W', id: `wild-${i}` });
-    }
-    for (let i = 1; i <= 4; i++) {
-        deck.push({ color: 'wild', type: 'wild_draw4', value: '+4', id: `wild4-${i}` });
+    // Wild cards - 4 of each
+    for (let i = 0; i < 4; i++) {
+        deck.push({ id: `card-${cardId++}`, color: 'wild', type: 'wild', value: 'wild' });
+        deck.push({ id: `card-${cardId++}`, color: 'wild', type: 'wild', value: 'wild_draw4' });
     }
 
-    return deck.sort(() => Math.random() - 0.5);
+    // Fisher-Yates shuffle
+    for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+
+    return deck;
 };
 
 // Helper: Generate room code

@@ -13,7 +13,8 @@ export default function RoomBrowser({ onJoinRoom }) {
     const { data: publicRooms = [], isLoading, refetch, isRefetching } = useQuery({
         queryKey: ['publicGames'],
         queryFn: async () => {
-            const response = await fetch('http://localhost:5000/api/games/public');
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+            const response = await fetch(`${apiUrl}/games/public`);
             if (!response.ok) throw new Error('Failed to fetch rooms');
             return response.json();
         },
@@ -118,27 +119,27 @@ export default function RoomBrowser({ onJoinRoom }) {
                                 onClick={() => !isFull && onJoinRoom(room)}
                                 disabled={isFull}
                                 className={cn(
-                                    "cursor-target relative p-4 rounded-xl bg-[#2B7BB9] border-2 border-[#1A5C8E] text-left transition-all",
+                                    "cursor-target relative p-4 rounded-xl bg-secondary/30 border-2 border-secondary/50 text-left transition-all",
                                     isFull
                                         ? "opacity-60 cursor-not-allowed"
-                                        : "hover:scale-[1.02] hover:border-[#4A9FD4] hover:shadow-lg hover:shadow-blue-500/20"
+                                        : "hover:scale-[1.02] hover:border-accent hover:shadow-lg hover:shadow-accent/20"
                                 )}
                             >
                                 {/* Room Name (Host) */}
-                                <p className="font-semibold text-white truncate text-sm mb-1">
+                                <p className="font-semibold text-text truncate text-sm mb-1">
                                     {room.host_name || 'Unknown'}'s Room
                                 </p>
 
                                 {/* Host Info */}
-                                <p className="text-white/60 text-xs truncate mb-3">
+                                <p className="text-text/60 text-xs truncate mb-3">
                                     #{room.room_code}
                                 </p>
 
                                 {/* Player Count Badge */}
                                 <div className="flex items-center gap-2">
-                                    <Users className="w-3.5 h-3.5 text-white/70" />
+                                    <Users className="w-3.5 h-3.5 text-text/70" />
                                     <span className={cn(
-                                        "px-2 py-0.5 rounded text-xs font-bold text-white",
+                                        "px-2 py-0.5 rounded text-xs font-bold text-text",
                                         statusColors[status]
                                     )}>
                                         {room.player_count}/{room.max_players}

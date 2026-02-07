@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Settings, Loader2, RotateCw, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { getThrowableCards, calculateHandScore } from '@/lib/cardUtils';
 
 import PlayerHand from './PlayerHand';
 import Card from './Card';
@@ -64,13 +65,15 @@ export default function GameBoard({ gameId, currentUser, onLeave }) {
         if (!playerCards?.length || !discardPile?.length) return [];
         const topCard = discardPile[discardPile.length - 1];
         const checkColor = currentColor || topCard.color;
-
-        return playerCards.filter(card => {
-            if (card.color === 'wild') return true;
-            if (card.color === checkColor) return true;
-            if (card.type === topCard.type && card.value === topCard.value) return true;
-            return false;
+        const playable = getThrowableCards(playerCards, topCard, checkColor);
+        console.log('Debug Playable:', {
+            topCard,
+            checkColor,
+            currentColor,
+            playableCount: playable.length,
+            playableIds: playable.map(c => c.id)
         });
+        return playable;
     }, []);
 
     const playCardMutation = useMutation({
@@ -101,10 +104,20 @@ export default function GameBoard({ gameId, currentUser, onLeave }) {
             if (card.type === 'draw2' || card.type === 'wild_draw4') {
                 const drawCount = card.type === 'draw2' ? 2 : 4;
                 const targetNextPlayer = updatedPlayers[nextPlayerIndex];
+
+                // Ensure deck has enough cards
+                if (newDeck.length < drawCount) {
+                    const reshuffled = newDiscardPile.slice(0, -1).sort(() => Math.random() - 0.5);
+                    newDeck = [...newDeck, ...reshuffled];
+                    newDiscardPile = [newDiscardPile[newDiscardPile.length - 1]];
+                }
+
                 const drawnCards = newDeck.slice(0, drawCount);
                 targetNextPlayer.cards = [...(targetNextPlayer.cards || []), ...drawnCards];
                 targetNextPlayer.card_count = targetNextPlayer.cards.length;
                 newDeck = newDeck.slice(drawCount);
+
+                // Skip the player who drew cards
                 nextPlayerIndex = (nextPlayerIndex + newDirection + game.players.length) % game.players.length;
             }
 
@@ -239,8 +252,12 @@ export default function GameBoard({ gameId, currentUser, onLeave }) {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-gradient-to-b from-[#4A9FD4] via-[#2B7BB9] to-[#1A5C8E] flex items-center justify-center">
-                <Loader2 className="w-12 h-12 animate-spin text-white" />
+            <div className="min-h-screen bg-canvas flex items-center justify-center">
+                <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 1 }}
+                    className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full"
+                />
             </div>
         );
     }
@@ -257,13 +274,19 @@ export default function GameBoard({ gameId, currentUser, onLeave }) {
     const rightOpponents = opponents.filter((_, i) => getOpponentPosition(i, opponents.length) === 'right');
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-[#4A9FD4] via-[#2B7BB9] to-[#1A5C8E] relative overflow-hidden">
+        <div className="min-h-screen bg-canvas relative overflow-hidden">
+            {/* Background Effects - matching app theme */}
+            <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/20 rounded-full blur-[100px] animate-pulse" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-accent/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }} />
+            </div>
+            <div className="noise-overlay" />
             {/* Settings Button - Top Right */}
             <button
                 onClick={() => setShowSettings(!showSettings)}
-                className="absolute top-4 right-4 z-50 w-10 h-10 rounded-full bg-white/20 backdrop-blur flex items-center justify-center hover:bg-white/30 transition-colors"
+                className="absolute top-4 right-4 z-50 w-10 h-10 rounded-full glass flex items-center justify-center hover:bg-white/10 transition-colors"
             >
-                <Settings className="w-5 h-5 text-white" />
+                <Settings className="w-5 h-5 text-text" />
             </button>
 
             {/* Settings Menu */}
@@ -273,11 +296,11 @@ export default function GameBoard({ gameId, currentUser, onLeave }) {
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="absolute top-16 right-4 z-50 bg-white rounded-xl shadow-xl p-4 min-w-[150px]"
+                        className="absolute top-16 right-4 z-50 glass-card rounded-xl p-4 min-w-[150px]"
                     >
                         <button
                             onClick={onLeave}
-                            className="w-full text-left px-3 py-2 text-red-500 hover:bg-red-50 rounded-lg font-medium"
+                            className="w-full text-left px-3 py-2 text-primary hover:bg-primary/10 rounded-lg font-medium transition-colors"
                         >
                             Leave Game
                         </button>
@@ -378,17 +401,17 @@ export default function GameBoard({ gameId, currentUser, onLeave }) {
                     <div className="flex justify-center mb-2">
                         <div className={cn(
                             "flex items-center gap-3 px-4 py-2 rounded-full",
-                            isMyTurn ? "bg-yellow-400/30" : "bg-white/10"
+                            isMyTurn ? "bg-accent/30" : "bg-secondary/20"
                         )}>
                             <div className={cn(
-                                "w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-lg",
-                                isMyTurn ? "bg-yellow-500" : "bg-purple-500"
+                                "w-10 h-10 rounded-full flex items-center justify-center font-bold text-canvas text-lg",
+                                isMyTurn ? "bg-accent" : "bg-secondary"
                             )}>
                                 {currentPlayer?.name?.[0]?.toUpperCase() || 'P'}
                             </div>
                             <span className={cn(
                                 "font-semibold",
-                                isMyTurn ? "text-yellow-300" : "text-white"
+                                isMyTurn ? "text-accent" : "text-text"
                             )}>
                                 {currentPlayer?.name} {isMyTurn && "- Your Turn!"}
                             </span>
@@ -424,11 +447,11 @@ export default function GameBoard({ gameId, currentUser, onLeave }) {
                                 ))}
                                 <Card card={{}} size="large" faceDown />
                             </div>
-                            <span className="mt-3 text-white text-base font-bold">
+                            <span className="mt-3 text-text text-base font-bold">
                                 {game?.deck?.length || 0} cards
                             </span>
                             {drawCardMutation.isPending && (
-                                <Loader2 className="absolute inset-0 m-auto w-10 h-10 animate-spin text-white" />
+                                <Loader2 className="absolute inset-0 m-auto w-10 h-10 animate-spin text-accent" />
                             )}
                         </motion.button>
 
