@@ -3,8 +3,8 @@ const Game = require('../models/Game');
 
 const router = express.Router();
 
-// Helper: Generate deck - matches frontend cardUtils expected structure
-const generateDeck = () => {
+// Helper: Build base deck structure once
+const buildBaseDeck = () => {
     const colors = ['red', 'blue', 'green', 'yellow'];
     const deck = [];
     let cardId = 0;
@@ -34,6 +34,15 @@ const generateDeck = () => {
         deck.push({ id: `card-${cardId++}`, color: 'wild', type: 'wild', value: 'wild' });
         deck.push({ id: `card-${cardId++}`, color: 'wild', type: 'wild', value: 'wild_draw4' });
     }
+    return deck;
+};
+
+const BASE_DECK = buildBaseDeck();
+
+// Helper: Generate deck - matches frontend cardUtils expected structure
+const generateDeck = () => {
+    // Clone the base deck
+    const deck = BASE_DECK.map(card => ({ ...card }));
 
     // Fisher-Yates shuffle
     for (let i = deck.length - 1; i > 0; i--) {
