@@ -2,10 +2,10 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { base44 } from '@/api/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Settings, Loader2, RotateCw, RotateCcw } from 'lucide-react';
+import { Settings, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { getThrowableCards, calculateHandScore } from '@/lib/cardUtils';
+import { getThrowableCards } from '@/lib/cardUtils';
 
 import PlayerHand from './PlayerHand';
 import Card from './Card';
@@ -80,7 +80,7 @@ export default function GameBoard({ gameId, currentUser, onLeave }) {
         mutationFn: async ({ card, chosenColor, playerIndex = currentPlayerIndex }) => {
             const targetPlayer = game.players[playerIndex];
             const newPlayerCards = targetPlayer.cards.filter(c => c.id !== card.id);
-            const newDiscardPile = [...game.discard_pile, card];
+            let newDiscardPile = [...game.discard_pile, card];
 
             let nextColor = card.color === 'wild' ? chosenColor : card.color;
             let nextPlayerIndex = game.current_player_index;
